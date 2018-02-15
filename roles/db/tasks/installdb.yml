@@ -1,0 +1,49 @@
+---
+# install file for db
+
+- name: Create MariaDB repo
+  template: src=MariaDB.repo.j2 dest=/etc/yum.repos.d/MariaDB.repo
+  when: USE_LOCAL_REPO is not defined
+
+- name: Install MariaDB 10.1
+  yum: name=MariaDB-server,MariaDB-client state=present
+
+- name: add my.cnf
+  blockinfile:
+   insertbefore: BOF
+   dest: /etc/my.cnf
+   block: |
+        [client]
+        port=3306
+        socket=/home/mysql/mysql.sock
+        [mysqld]
+        datadir=/home/mysql
+        socket=/home/mysql/mysql.sock
+        skip-name-resolve
+
+- name: copy the mysql directory
+  command: cp -a /var/lib/mysql /home/
+  
+- name: change owner
+  file: path=/home/mysql/ state=directory recurse=yes owner=mysql group=mysql mode=0755
+ 
+- name: change system service protect home parameter to false
+  lineinfile: "dest=/usr/lib/systemd/system/mariadb.service
+              regexp='ProtectHome='
+              line='ProtectHome=false'
+              state=present"
+
+- name: change protect system parameter to false
+  lineinfile: "dest=/usr/lib/systemd/system/mariadb.service
+              regexp='ProtectSystem=true'
+              line='ProtectSystem=false'
+              state=present"
+ 
+- name: reload systemd daemon
+  command: systemctl daemon-reload
+  
+- name: start mariadb service
+  service: name=mysql state=started enabled=yes
+ 
+- name: create a soft link to /var/lib/mysql 
+  command: ln -s /home/mysql/mysql.sock /var/lib/mysql

@@ -1,0 +1,6 @@
+---
+# vars file for db
+# uncomment USE_XTRABACKUP for using xtrabackup and keep 20 days backup data
+#USE_XTRABACKUP: 20
+BACKUP_USER: backup
+BACKUP_USER_PASS: backup123

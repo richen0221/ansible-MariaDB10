@@ -1,0 +1,19 @@
+---
+# tasks file for db
+
+- name: check the db installation's status
+  stat: path=/var/lib/mysql/mysql.sock
+  register: dbinstall
+  
+- name: Install MariaDB
+  import_tasks: installdb.yml
+  when:
+       - ansible_distribution_major_version == "7"
+       - dbinstall.stat.exists == False
+   
+- name: Install Percona XtraBackup
+  import_tasks: dbbackup.yml
+  when:
+      - USE_XTRABACKUP is defined
+  tags:
+      - backup_only

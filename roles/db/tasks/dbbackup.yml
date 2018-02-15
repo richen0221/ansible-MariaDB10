@@ -1,0 +1,47 @@
+---
+# backup for db
+
+- name: Install Percona XtraBackup repo
+  yum:
+      name: http://www.percona.com/downloads/percona-release/redhat/0.1-4/percona-release-0.1-4.noarch.rpm
+      state: present
+
+- name: Install Percona XtraBackup
+  yum:
+      name: percona-xtrabackup-24, MySQL-python
+      state: present
+ 
+-  name: create backup user for xtradbbackup
+   mysql_user:
+      name: "{{ BACKUP_USER }}"
+      password: "{{ BACKUP_USER_PASS }}"
+      priv: "*.*:RELOAD,LOCK TABLES,PROCESS,REPLICATION CLIENT"
+      state: present
+   tags:
+       - create_back_user
+       
+- name: create scripts in root home
+  file:
+      path: /root/scripts
+      state: directory
+      mode: 0755
+
+- name: setup the backup DB script
+  template:
+      src: xtrabackup.sh.j2
+      dest: /root/scripts/xtrabackup.sh
+      mode: 0755
+
+- name: setup the backup cron job
+  cron:   
+      name: "backup DB"
+      minute: "0"
+      hour: "2"
+      job: "/root/scripts/xtrabackup.sh --backup"
+      
+- name: setup the housekeep cron job
+  cron:   
+      name: "housekeep backup DB files"
+      minute: "0"
+      hour: "1"
+      job: "/root/scripts/xtrabackup.sh --housekeeper {{ USE_XTRABACKUP }}"

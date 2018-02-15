@@ -1,0 +1,6 @@
+---
+- hosts: server-ip
+  remote_user: secondary_user
+  roles:
+    - db
+  become: true
